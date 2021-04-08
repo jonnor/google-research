@@ -44,6 +44,7 @@ class Dataset(enum.Enum):
 
   CREMA_D = "crema_d"
 
+  TESTING = "testing"
 
 @enum.unique
 class TrainingMode(enum.Enum):

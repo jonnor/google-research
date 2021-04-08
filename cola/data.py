@@ -17,16 +17,96 @@
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
+import tensorflow_io as tfio
 
 from cola import constants
+
+import os.path
+import pandas
+
+
+def list_files_below(root):
+
+    for path, subdirs, files in os.walk(root):
+        for name in files:
+            yield os.path.join(path, name)
+
+def read_files(directory, suffix='.wav', compute_hashes=False):
+
+    # Find and filter
+    paths = list(list_files_below(directory))
+    paths = [ f for f in paths if f.lower().endswith(suffix) ]
+
+    # Compute details
+    resolver = os.path.realpath # follow symlinks to the end
+    stats = [ os.stat(resolver(p)) for p in paths ]
+
+    # Extract information of interest
+    df = pandas.DataFrame({
+        'path': paths,
+        'size': [ s.st_size for s in stats ],
+        'created_at': pandas.to_datetime([ s.st_ctime_ns for s in stats ], unit='ns'),
+        'modified_at': pandas.to_datetime([ s.st_mtime_ns for s in stats ], unit='ns'),
+        'hash_sha256': [None] * len(paths)
+    })    
+
+    if compute_hashes:
+        hashes = [ sha256sum_file(p) for p in paths ]
+        df['hash_sha256'] = hashes
+
+    return df
+
+#@tf.function
+def load_audio(file_path):
+    # Load one second of audio at 44.1kHz sample-rate
+    #import tf.audio.decode_flac
+
+    #audio = tf.io.read_file(file_path)
+
+    audio = tfio.audio.AudioIOTensor(file_path, dtype=tf.int16).to_tensor()
+
+
+    #print(tfio.__version__)
+
+    #audio, sample_rate = tfio.audio.decode_wav(audio, dtype=tf.uint8)
+    return audio
+
+def get_files(path):
+
+    df = read_files(path, suffix='.flac')
+
+    file_path_ds = tf.data.Dataset.from_tensor_slices(df['path'])
+
+    print(df.path)
+
+    return file_path_ds
 
 
 def get_self_supervised_data(dataset=constants.Dataset.LBS,
                              shuffle_buffer=1000):
   """Reads TFDS data for self-supervised task."""
 
+  print("dataset", str(dataset))
+
   def _parse_example(audio, _):
     return {"audio": tf.cast(audio, tf.float32) / float(tf.int16.max)}
+
+  #@tf.function
+  def _load_audio(path):
+    print("lll", path)
+    audio = tf.squeeze(load_audio(path))
+    print("audio", audio.shape)
+    return {"audio": tf.cast(audio, tf.float32) / float(tf.int16.max)}
+
+
+  if dataset == constants.Dataset.TESTING:
+
+    ds_train = get_files('data/')
+    ds_train = ds_train.shuffle(shuffle_buffer, reshuffle_each_iteration=True)
+    ds_train = ds_train.map(
+      _load_audio, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+    return ds_train
 
   if dataset == constants.Dataset.LBS:
     split = "train_clean360"
