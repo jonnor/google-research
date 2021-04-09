@@ -53,6 +53,9 @@ flags.DEFINE_string("ssl_checkpoint_id", None,
 flags.DEFINE_integer("batch_size", 64,
                      "Batch size to use for training the network.")
 
+flags.DEFINE_integer("steps_per_epoch", 1000,
+                     "Number of steps per epoch")
+
 flags.DEFINE_float("learning_rate", 0.001, "Learning rate.")
 
 flags.DEFINE_integer("epochs", 100, "Number of training epochs.")
@@ -101,6 +104,7 @@ def main(_):
         embedding_dim=FLAGS.embedding_dim,
         similarity_type=FLAGS.similarity_type,
         pooling_type=FLAGS.pooling_type,
+        steps_per_epoch=FLAGS.steps_per_epoch,
         noise=FLAGS.noise)
     model.train()
   elif FLAGS.training_mode == constants.TrainingMode.RND:
@@ -111,6 +115,7 @@ def main(_):
         experiment_id=FLAGS.experiment_id,
         batch_size=FLAGS.batch_size,
         epochs=FLAGS.epochs,
+        steps_per_epoch=FLAGS.steps_per_epoch,
         learning_rate=FLAGS.learning_rate)
     model.train_eval(
         load_pretrained=False, contrastive_pooling_type=FLAGS.pooling_type)
@@ -122,6 +127,7 @@ def main(_):
         experiment_id=FLAGS.experiment_id,
         batch_size=FLAGS.batch_size,
         epochs=FLAGS.epochs,
+        steps_per_epoch=FLAGS.steps_per_epoch,
         learning_rate=FLAGS.learning_rate)
     model.train_eval(
         load_pretrained=False,
@@ -135,6 +141,7 @@ def main(_):
         experiment_id=FLAGS.experiment_id,
         batch_size=FLAGS.batch_size,
         epochs=FLAGS.epochs,
+        steps_per_epoch=FLAGS.steps_per_epoch,
         learning_rate=FLAGS.learning_rate)
     model.train_eval(
         freeze_encoder=FLAGS.freeze_encoder,
