@@ -64,6 +64,9 @@ def load_audio(file_path):
     #audio = tf.io.read_file(file_path)
 
     audio = tfio.audio.AudioIOTensor(file_path, dtype=tf.int16).to_tensor()
+    audio = tf.squeeze(audio)
+
+    audio = tf.reduce_mean(audio, axis=-1)
 
 
     #print(tfio.__version__)
