@@ -47,6 +47,13 @@ flags.DEFINE_enum_class("ds_dataset", constants.Dataset.MUSAN,
                         constants.Dataset,
                         "Name of the downstream task dataset.")
 
+flags.DEFINE_string("custom_data_dir", None,
+                    "Data directory for when using CUSTOM dataset")
+
+flags.DEFINE_string("custom_file_extension", '.flac',
+                    "File extension for when using CUSTOM dataset")
+
+
 flags.DEFINE_string("ssl_checkpoint_id", None,
                     "Self-supervised model checkpoint id.")
 
@@ -105,6 +112,8 @@ def main(_):
         similarity_type=FLAGS.similarity_type,
         pooling_type=FLAGS.pooling_type,
         steps_per_epoch=FLAGS.steps_per_epoch,
+        custom_data_dir=FLAGS.custom_data_dir,
+        custom_data_extension=FLAGS.custom_file_extension,
         noise=FLAGS.noise)
     model.train()
   elif FLAGS.training_mode == constants.TrainingMode.RND:

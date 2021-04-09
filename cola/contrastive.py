@@ -40,6 +40,8 @@ class ContrastiveModel:
                similarity_type,
                pooling_type,
                noise,
+               custom_data_dir = None,
+               custom_data_extension = None,
                steps_per_epoch = 1000):
     """Initializes a contrastive model object."""
 
@@ -48,6 +50,9 @@ class ContrastiveModel:
     self._ds_dataset_name = ds_dataset_name
     self._model_path = model_path
     self._experiment_id = experiment_id
+
+    self._custom_data_dir = custom_data_dir
+    self._custom_data_extension = custom_data_extension
 
     self._batch_size = batch_size
     self._epochs = epochs
@@ -83,7 +88,11 @@ class ContrastiveModel:
 
   def _get_ssl_task_data(self):
     """Prepares a dataset for contrastive self-supervised task."""
-    ds = data.get_self_supervised_data(self._ssl_dataset_name).repeat()
+
+    dd = data.get_self_supervised_data(self._ssl_dataset_name,
+            custom_data_dir=self._custom_data_dir,
+            custom_file_extension=self._custom_data_extension)
+    ds = dd.repeat()
     ds = ds.shuffle(self._shuffle_buffer, reshuffle_each_iteration=True)
     ds = ds.map(
         self._prepare_example, num_parallel_calls=tf.data.experimental.AUTOTUNE)

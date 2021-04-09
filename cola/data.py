@@ -56,37 +56,28 @@ def read_files(directory, suffix='.wav', compute_hashes=False):
 
     return df
 
-#@tf.function
+
 def load_audio(file_path):
-    # Load one second of audio at 44.1kHz sample-rate
-    #import tf.audio.decode_flac
-
-    #audio = tf.io.read_file(file_path)
-
+    # XXX: is this the correct dtype
     audio = tfio.audio.AudioIOTensor(file_path, dtype=tf.int16).to_tensor()
     audio = tf.squeeze(audio)
 
     audio = tf.reduce_mean(audio, axis=-1)
 
-
-    #print(tfio.__version__)
-
-    #audio, sample_rate = tfio.audio.decode_wav(audio, dtype=tf.uint8)
     return audio
 
-def get_files(path):
-
-    df = read_files(path, suffix='.flac')
+def get_files(path, suffix='.wav'):
+    df = read_files(path, suffix=suffix)
 
     file_path_ds = tf.data.Dataset.from_tensor_slices(df['path'])
-
-    print(df.path)
 
     return file_path_ds
 
 
 def get_self_supervised_data(dataset=constants.Dataset.LBS,
-                             shuffle_buffer=1000):
+                             shuffle_buffer=1000,
+                             custom_data_dir=None,
+                             custom_file_extension=None):
   """Reads TFDS data for self-supervised task."""
 
   print("dataset", str(dataset))
@@ -94,20 +85,17 @@ def get_self_supervised_data(dataset=constants.Dataset.LBS,
   def _parse_example(audio, _):
     return {"audio": tf.cast(audio, tf.float32) / float(tf.int16.max)}
 
-  #@tf.function
-  def _load_audio(path):
-    print("lll", path)
+  def _load_custom_audio(path):
     audio = tf.squeeze(load_audio(path))
-    print("audio", audio.shape)
     return {"audio": tf.cast(audio, tf.float32) / float(tf.int16.max)}
 
 
-  if dataset == constants.Dataset.TESTING:
+  if dataset == constants.Dataset.CUSTOM:
 
-    ds_train = get_files('data/')
+    ds_train = get_files(custom_data_dir, suffix=custom_file_extension)
     ds_train = ds_train.shuffle(shuffle_buffer, reshuffle_each_iteration=True)
     ds_train = ds_train.map(
-      _load_audio, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+      _load_custom_audio, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     return ds_train
 
